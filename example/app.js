@@ -4,15 +4,13 @@ var app = express();
 var serveFontmin = require('serve-fontmin');
 
 app.use(express.static('public'));
-
 app.use('/static', serveFontmin('public/font'));
-
 
 app.get('/', function (req, res) {
   res.send('Hello World!');
 });
 
-var server = app.listen(3000, function () {
+var server = app.listen(8090, function () {
   var host = server.address().address;
   var port = server.address().port;
 

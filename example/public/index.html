@@ -3,13 +3,15 @@
 <head>
     <meta charset="utf-8">
     <title> serve-fontmin-demo </title>
+    <style>
+        pre {
+            font-family: "Noto Sans CJK SC Light";
+        }
+    </style>
 </head>
 
 <body>
 <article>
-<h1>
-    他夏了夏天
-</h1>
 <pre>
 几点钟 结束梦 他按下闹钟
 如往常 开始了一天生活
@@ -23,32 +25,30 @@
 他从不害怕自己被人群淹没
 中午吃便当是他最大享受
 </pre>
-
 </article>
 
 <script>
-    var text = document.querySelector('article').innerText;
 
-    var fontminAPI = 'http://127.0.0.1:3000/static/';
+    function loadCss(url) {
+        var link = document.createElement('link');
+        link.setAttribute('rel', 'stylesheet');
+        link.setAttribute('type', 'text/css');
+        link.setAttribute('href', url);
+
+        var parent = document.getElementsByTagName('head')[0]
+            || document.body;
+        parent.appendChild(link);
+    }
+
+    var text = document.querySelector('article').innerText;
+    var fontminAPI = 'http://127.0.0.1:8090/static/';
     var fontName = 'NotoSansCJKsc-Light';
     var cssExt = '.css';
     var cssUrl = fontminAPI + fontName + cssExt + '?text=' + text;
 
-    var link = document.createElement('link');
-    link.setAttribute('rel', 'stylesheet');
-    link.setAttribute('type', 'text/css');
-    link.setAttribute('href', cssUrl);
-
-    var parent = document.getElementsByTagName('head')[0]
-        || document.body;
-    parent.appendChild(link);
+    loadCss(cssUrl);
 
 </script>
-<style>
-    h1,
-    pre {
-        font-family: "Noto Sans CJK SC Light";
-    }
-</style>
+
 </body>
 </html>

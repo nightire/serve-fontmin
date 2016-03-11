@@ -7,8 +7,8 @@
 var path = require('path');
 var fs = require('fs');
 var resolve = require('path').resolve;
-var send = require('send');
 var streamRename = require('stream-rename');
+var concat = require('concat-stream');
 var Fontmin = require('fontmin');
 
 // lib
@@ -21,34 +21,6 @@ var Storage = require('./lib/storage');
  */
 
 module.exports = serveFontmin;
-
-/**
- * outputStream
- *
- * @param  {stream}   stream stream
- * @param  {res}   res response
- * @param  {Function} next next
- */
-function outputStream(stream, res, next) {
-
-    stream.on('directory', function forbidden() {
-        res.statusCode = 403;
-    });
-
-    // forward errors
-    stream.on('error', function error(err) {
-
-        if (!(err.statusCode < 500)) {
-            next(err);
-            return;
-        }
-
-        next();
-    });
-
-    // pipe
-    stream.pipe(res);
-}
 
 /**
  * serveFontmin
@@ -78,9 +50,6 @@ function serveFontmin(root, options) {
     // for css
     opts.fontPath = ['.', opts.dest, ''].join('/');
 
-    // Dest
-    var dest = resolve(opts.root, opts.dest);
-
     // storage
     var storage = opts.storage || new Storage(opts.root);
 
@@ -94,28 +63,11 @@ function serveFontmin(root, options) {
     return function (req, res, next) {
 
         /**
-         * outputFile
-         *
-         * @param  {string} path
-         */
-        function outputFile (path) {
-            var stream = send(req, path, opts);
-            outputStream(stream, res, next);
-        }
-
-        /**
          * font
          *
          * @type {Object}
          */
         var font = fontUrl.parse(req);
-
-        // no next
-        if (!font.text) {
-            res.statusCode = 404;
-            next();
-            return;
-        }
 
         // not support
         if (!font.support) {
@@ -124,41 +76,47 @@ function serveFontmin(root, options) {
             return;
         }
 
-        // srcPath
-        var srcPath = resolve(opts.root, font.srcPath);
-
         // 404
-        if (!font.srcPath || !storage.has(srcPath)) {
+        if (!font.srcPath || !storage.has(font.srcPath)) {
             res.statusCode = 404;
             next();
             return;
         }
 
         // destPath
-        var destPath = resolve(dest, font.hash, font.ext);
+        var destPath = path.join(opts.dest, font.hash + font.ext);
 
         if (storage.has(destPath)) {
-            outputFile(destPath);
+
+            storage
+                .createReadStream(destPath)
+                .pipe(res);
         }
         else {
 
-            // fontmin init
-            var fontmin = new Fontmin()
-                .src(srcPath)
-                .use(Fontmin.glyph({
+            var stream = storage.src(font.srcPath)
+                .pipe(Fontmin.glyph({
                     text: font.text
-                }))
-                .use(streamRename({
+                })())
+                .pipe(streamRename({
                     basename: font.hash
                 }))
-                .use(Fontmin.ttf2eot(opts))
-                .use(Fontmin.ttf2woff(opts))
-                .use(Fontmin.ttf2svg(opts))
-                .use(Fontmin.css(opts))
-                .dest(opts.dest);
+                .pipe(Fontmin.ttf2eot(opts)())
+                .pipe(Fontmin.ttf2woff(opts)())
+                .pipe(Fontmin.ttf2svg(opts)())
+                .pipe(Fontmin.css(opts)())
+                .pipe(storage.dest(opts.dest))
 
-            // run
-            fontmin.run(function (err, files) {
+            stream.on('error', fmCallback);
+            stream.pipe(concat(fmCallback.bind(null, null)));
+
+
+            /**
+             * fmCallback
+             * @param  {err} err   err
+             * @param  {Array} files files
+             */
+            function fmCallback(err, files) {
 
                 // fontmin err
                 if (err) {
@@ -175,23 +133,27 @@ function serveFontmin(root, options) {
                 }
 
                 // output dest
-                var finded = files.some(function (file) {
+                var sended = files.some(function (file) {
 
-                    if (path.extname(file.path) === font.ext) {
-                        outputFile(destPath);
+                    if (path.extname(file.path) === '.css') {
+
+                        storage
+                            .createReadStream(destPath)
+                            .pipe(res);
+
                         return true;
                     }
 
                 });
 
                 // empty dest
-                if (finded.length === 0) {
+                if (!sended) {
                     res.statusCode = 404;
                     next();
                     return;
                 }
 
-            });
+            }
 
         }
 

@@ -12,7 +12,7 @@ var app = express();
 
 app.use('/static', serveFontmin('public/font'));
 
-var server = app.listen(3000, function () {
+var server = app.listen(8090, function () {
   var host = server.address().address;
   var port = server.address().port;
 
@@ -21,7 +21,7 @@ var server = app.listen(3000, function () {
 
 ```
 
-open <http://127.0.0.1:3000/static/fontname.css?text=百度一下，你就知道>
+open <http://127.0.0.1:8090/static/fontname.css?text=百度一下，你就知道>
 
 # Example
 
@@ -31,4 +31,4 @@ npm i
 node app.js
 ```
 
-open <http://127.0.0.1:3000/index.html>
+open <http://127.0.0.1:8090/index.html>
