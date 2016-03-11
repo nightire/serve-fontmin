@@ -5,7 +5,6 @@
 
 // base
 var path = require('path');
-var fs = require('fs');
 var resolve = require('path').resolve;
 var streamRename = require('stream-rename');
 var concat = require('concat-stream');
@@ -21,6 +20,60 @@ var Storage = require('./lib/storage');
  */
 
 module.exports = serveFontmin;
+
+
+/**
+ * fontmin callback
+ *
+ * @param  {Object} storage   storage
+ * @param  {Object} res   res
+ * @param  {Function} next   next
+ * @param  {Error} err   err
+ * @param  {Array} files   files
+ */
+var fmCallback = function (storage, res, next, err, files) {
+
+    // fontmin err
+    if (err) {
+        res.statusCode = 502;
+        next(err);
+        return;
+    }
+
+    // empty src
+    if (files.length === 0) {
+        res.statusCode = 404;
+        next();
+        return;
+    }
+
+    // output dest
+    var sended = files.some(function (file) {
+
+        if (path.extname(file.path) === '.css') {
+
+            var stream = storage
+                .createReadStream(file.path);
+
+            stream && stream.pipe(res);
+
+            return true;
+        }
+
+    });
+
+    // empty dest
+    if (!sended) {
+        res.statusCode = 404;
+        next();
+        return;
+    }
+
+
+};
+
+
+
 
 /**
  * serveFontmin
@@ -86,15 +139,20 @@ function serveFontmin(root, options) {
         // destPath
         var destPath = path.join(opts.dest, font.hash + font.ext);
 
+        // stream
+        var stream;
+
         if (storage.has(destPath)) {
 
-            storage
-                .createReadStream(destPath)
-                .pipe(res);
+            stream = storage
+                .createReadStream(destPath);
+
+            stream && stream.pipe(res);
+
         }
         else {
 
-            var stream = storage.src(font.srcPath)
+            stream = storage.src(font.srcPath)
                 .pipe(Fontmin.glyph({
                     text: font.text
                 })())
@@ -105,55 +163,13 @@ function serveFontmin(root, options) {
                 .pipe(Fontmin.ttf2woff(opts)())
                 .pipe(Fontmin.ttf2svg(opts)())
                 .pipe(Fontmin.css(opts)())
-                .pipe(storage.dest(opts.dest))
-
-            stream.on('error', fmCallback);
-            stream.pipe(concat(fmCallback.bind(null, null)));
+                .pipe(storage.dest(opts.dest));
 
 
-            /**
-             * fmCallback
-             * @param  {err} err   err
-             * @param  {Array} files files
-             */
-            function fmCallback(err, files) {
+            var callback = fmCallback.bind(null, storage, res, next);
 
-                // fontmin err
-                if (err) {
-                    res.statusCode = 502;
-                    next(err);
-                    return;
-                }
-
-                // empty src
-                if (files.length === 0) {
-                    res.statusCode = 404;
-                    next();
-                    return;
-                }
-
-                // output dest
-                var sended = files.some(function (file) {
-
-                    if (path.extname(file.path) === '.css') {
-
-                        storage
-                            .createReadStream(destPath)
-                            .pipe(res);
-
-                        return true;
-                    }
-
-                });
-
-                // empty dest
-                if (!sended) {
-                    res.statusCode = 404;
-                    next();
-                    return;
-                }
-
-            }
+            stream.on('error', callback);
+            stream.pipe(concat(callback.bind(null, null)));
 
         }
 
@@ -161,3 +177,6 @@ function serveFontmin(root, options) {
     };
 
 }
+
+
+

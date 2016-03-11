@@ -1,7 +1,7 @@
 var express = require('express');
 var app = express();
 
-var serveFontmin = require('serve-fontmin');
+var serveFontmin = require('../');
 
 app.use(express.static('public'));
 app.use('/static', serveFontmin('public/font'));
