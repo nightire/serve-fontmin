@@ -1,11 +1,11 @@
-/*
- * serve-fontmin
+/**
+ * @file serve-fontmin
+ * @author junmer
  */
 
 // base
 var path = require('path');
 var fs = require('fs');
-var parseUrl = require('parseurl');
 var resolve = require('path').resolve;
 var send = require('send');
 var streamRename = require('stream-rename');
@@ -25,9 +25,9 @@ module.exports = serveFontmin;
 /**
  * outputStream
  *
- * @param  {stream}   stream
- * @param  {res}   res
- * @param  {Function} next
+ * @param  {stream}   stream stream
+ * @param  {res}   res response
+ * @param  {Function} next next
  */
 function outputStream(stream, res, next) {
 
@@ -38,13 +38,13 @@ function outputStream(stream, res, next) {
     // forward errors
     stream.on('error', function error(err) {
 
-      if (!(err.statusCode < 500)) {
-        next(err);
-        return;
-      }
+        if (!(err.statusCode < 500)) {
+            next(err);
+            return;
+        }
 
-      next();
-    })
+        next();
+    });
 
     // pipe
     stream.pipe(res);
@@ -53,9 +53,9 @@ function outputStream(stream, res, next) {
 /**
  * serveFontmin
  *
- * @param {string} root
- * @param {object} [options]
- * @return {function}
+ * @param {string} root root
+ * @param {Object} options options
+ * @return {Function} serveFontmin handler
  * @public
  */
 function serveFontmin(root, options) {
@@ -84,11 +84,11 @@ function serveFontmin(root, options) {
     /**
      * serveFontmin
      *
-     * @param  {req}   req
-     * @param  {res}   res
-     * @param  {Function} next
+     * @param  {req}   req request
+     * @param  {res}   res response
+     * @param  {Function} next next
      */
-    return function(req, res, next) {
+    return function (req, res, next) {
 
         var font = fontUrl.parse(req);
 
@@ -103,10 +103,7 @@ function serveFontmin(root, options) {
         var srcPath = resolve(opts.root, font.srcPath);
 
         // 404
-        if (
-            !font.srcPath ||
-            !fs.existsSync(srcPath)
-            ) {
+        if (!font.srcPath || !fs.existsSync(srcPath)) {
             res.statusCode = 404;
             next();
             return;
@@ -123,17 +120,17 @@ function serveFontmin(root, options) {
 
             var fontmin = new Fontmin()
                 .src(srcPath)
-                .use(Fontmin.glyph({            // 字型提取插件
-                    text: font.text             // 所需文字
+                .use(Fontmin.glyph({
+                    text: font.text
                 }))
                 .use(streamRename({
-                   basename: font.hash
+                    basename: font.hash
                 }))
-                .use(Fontmin.ttf2eot(opts))     // eot 转换插件
-                .use(Fontmin.ttf2woff(opts))    // woff 转换插件
-                .use(Fontmin.ttf2svg(opts))     // svg 转换插件
-                .use(Fontmin.css(opts))         // css 生成插件
-                .dest(dest.root);               // 输出
+                .use(Fontmin.ttf2eot(opts))
+                .use(Fontmin.ttf2woff(opts))
+                .use(Fontmin.ttf2svg(opts))
+                .use(Fontmin.css(opts))
+                .dest(dest.root);
 
             fontmin.run(function (err, files) {
 
@@ -154,7 +151,7 @@ function serveFontmin(root, options) {
                 // 在生产列表中找到并输出
                 var finded = files.some(function (file) {
 
-                    if (path.extname(file.path) == font.ext) {
+                    if (path.extname(file.path) === font.ext) {
 
                         var stream = send(req, destPath);
                         outputStream(stream, res, next);
@@ -165,7 +162,7 @@ function serveFontmin(root, options) {
                 });
 
                 // 没在生产列表中 404
-                if (finded.length == 0) {
+                if (finded.length === 0) {
                     res.statusCode = 404;
                     next();
                     return;
