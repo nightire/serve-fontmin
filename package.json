@@ -1,7 +1,8 @@
 {
   "name": "serve-fontmin",
   "version": "0.0.1",
-  "description": "",
+  "description": "fontmin serving middleware",
+  "files": ["index.js", "lib"],
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

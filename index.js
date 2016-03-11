@@ -13,7 +13,7 @@ var Fontmin = require('fontmin');
 
 // lib
 var fontUrl = require('./lib/font-url');
-var Dest = require('./lib/dest');
+var Storage = require('./lib/storage');
 
 /**
  * Module exports.
@@ -79,7 +79,10 @@ function serveFontmin(root, options) {
     opts.fontPath = ['.', opts.dest, ''].join('/');
 
     // Dest
-    var dest = new Dest(resolve(opts.root, opts.dest));
+    var dest = resolve(opts.root, opts.dest);
+
+    // storage
+    var storage = opts.storage || new Storage(opts.root);
 
     /**
      * serveFontmin
@@ -90,9 +93,31 @@ function serveFontmin(root, options) {
      */
     return function (req, res, next) {
 
+        /**
+         * outputFile
+         *
+         * @param  {string} path
+         */
+        function outputFile (path) {
+            var stream = send(req, path, opts);
+            outputStream(stream, res, next);
+        }
+
+        /**
+         * font
+         *
+         * @type {Object}
+         */
         var font = fontUrl.parse(req);
 
-        // parse fail
+        // no next
+        if (!font.text) {
+            res.statusCode = 404;
+            next();
+            return;
+        }
+
+        // not support
         if (!font.support) {
             res.statusCode = 404;
             next();
@@ -103,21 +128,21 @@ function serveFontmin(root, options) {
         var srcPath = resolve(opts.root, font.srcPath);
 
         // 404
-        if (!font.srcPath || !fs.existsSync(srcPath)) {
+        if (!font.srcPath || !storage.has(srcPath)) {
             res.statusCode = 404;
             next();
             return;
         }
 
         // destPath
-        var destPath = dest.getPath(font.hash + font.ext);
+        var destPath = resolve(dest, font.hash, font.ext);
 
-        if (dest.has(font.hash)) {
-            var stream = send(req, destPath);
-            outputStream(stream, res, next);
+        if (storage.has(destPath)) {
+            outputFile(destPath);
         }
         else {
 
+            // fontmin init
             var fontmin = new Fontmin()
                 .src(srcPath)
                 .use(Fontmin.glyph({
@@ -130,38 +155,36 @@ function serveFontmin(root, options) {
                 .use(Fontmin.ttf2woff(opts))
                 .use(Fontmin.ttf2svg(opts))
                 .use(Fontmin.css(opts))
-                .dest(dest.root);
+                .dest(opts.dest);
 
+            // run
             fontmin.run(function (err, files) {
 
-                // 错误
+                // fontmin err
                 if (err) {
                     res.statusCode = 502;
                     next(err);
                     return;
                 }
 
-                // 没生出来
+                // empty src
                 if (files.length === 0) {
                     res.statusCode = 404;
                     next();
                     return;
                 }
 
-                // 在生产列表中找到并输出
+                // output dest
                 var finded = files.some(function (file) {
 
                     if (path.extname(file.path) === font.ext) {
-
-                        var stream = send(req, destPath);
-                        outputStream(stream, res, next);
-
+                        outputFile(destPath);
                         return true;
                     }
 
                 });
 
-                // 没在生产列表中 404
+                // empty dest
                 if (finded.length === 0) {
                     res.statusCode = 404;
                     next();

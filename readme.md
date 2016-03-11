@@ -1,9 +1,11 @@
 serve-fontmin
 ===
 
+> fontmin serving middleware 
+
 # Usage
 
-```
+```javscript
 var express = require('express');
 var serveFontmin = require('serve-fontmin');
 var app = express();
@@ -20,3 +22,13 @@ var server = app.listen(3000, function () {
 ```
 
 open <http://127.0.0.1:3000/static/fontname.css?text=百度一下，你就知道>
+
+# Example
+
+```sh
+cd example
+npm i
+node app.js
+```
+
+open <http://127.0.0.1:3000/index.html>
