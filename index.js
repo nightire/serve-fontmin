@@ -137,14 +137,6 @@ function serveFontmin(root, options) {
          */
         var font = fontUrl.parse(req);
 
-        // igonre dest hash
-        var sourceHash = font.pathname.indexOf(opts.dest) > -1
-            ? font.basename
-            : font.hash;
-
-        // destPath
-        var destPath = path.join(opts.dest, sourceHash + font.ext);
-
         // not support
         if (!font.support) {
             res.statusCode = 404;
@@ -158,6 +150,14 @@ function serveFontmin(root, options) {
             next();
             return;
         }
+
+        // igonre dest hash
+        var sourceHash = font.pathname.indexOf(opts.dest) > -1
+            ? font.basename
+            : font.hash;
+
+        // destPath
+        var destPath = path.join(opts.dest, sourceHash + font.ext);
 
         // cache
         if (storage.has(destPath)) {

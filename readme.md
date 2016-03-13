@@ -2,13 +2,12 @@
 [![NPM version][npm-image]][npm-url]
 [![Downloads][downloads-image]][npm-url]
 [![Dependencies][dep-image]][dep-url]
-[![Font support][font-image]][font-url]
 
 > fontmin serving middleware 
 
 ## Usage
 
-```javscript
+```javascript
 var express = require('express');
 var serveFontmin = require('serve-fontmin');
 var app = express();
@@ -24,14 +23,16 @@ var server = app.listen(8090, function () {
 
 ```
 
-open `http://127.0.0.1:8090/static/${fontname}.css?text=他夏了夏天`
+## API
+
+`${origin}/static/${filename}.css?text=${text}`
 
 ## Example
 
 ```sh
-cd example
-npm i
-node app.js
+$ cd example
+$ npm i
+$ node app.js
 ```
 
 open <http://127.0.0.1:8090/index.html>
@@ -40,6 +41,7 @@ open <http://127.0.0.1:8090/index.html>
 
 - [express](http://expressjs.com)
 - [fontmin](http://ecomfe.github.io/fontmin/)
+- [senty font][font-url]
 
 ## License
 
@@ -52,5 +54,4 @@ MIT © fontmin
 [dep-url]: https://david-dm.org/junmer/serve-fontmin
 [dep-image]: http://img.shields.io/david/junmer/serve-fontmin.svg
 
-[font-image]: https://img.shields.io/badge/font-senty-blue.svg
 [font-url]: http://font.sentywed.com/
