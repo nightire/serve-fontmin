@@ -23,59 +23,6 @@ module.exports = serveFontmin;
 
 
 /**
- * fontmin callback
- *
- * @param  {Object} storage   storage
- * @param  {Object} res   res
- * @param  {Function} next   next
- * @param  {Error} err   err
- * @param  {Array} files   files
- */
-var fmCallback = function (storage, res, next, err, files) {
-
-    // fontmin err
-    if (err) {
-        res.statusCode = 502;
-        next(err);
-        return;
-    }
-
-    // empty src
-    if (files.length === 0) {
-        res.statusCode = 404;
-        next();
-        return;
-    }
-
-    // output dest
-    var sended = files.some(function (file) {
-
-        if (path.extname(file.path) === '.css') {
-
-            var stream = storage
-                .createReadStream(file.path);
-
-            stream && stream.pipe(res);
-
-            return true;
-        }
-
-    });
-
-    // empty dest
-    if (!sended) {
-        res.statusCode = 404;
-        next();
-        return;
-    }
-
-
-};
-
-
-
-
-/**
  * serveFontmin
  *
  * @param {string} root root
@@ -107,6 +54,74 @@ function serveFontmin(root, options) {
     var storage = opts.storage || new Storage(opts.root);
 
     /**
+     * fontmin
+     *
+     * @param  {Object}   font     font
+     * @param  {Object}   opts     opts
+     * @param  {Function} callback callback
+     */
+    function fontmin(font, opts, callback) {
+
+        var stream = storage.src(font.srcPath)
+            .pipe(Fontmin.glyph({
+                text: font.text
+            })())
+            .pipe(streamRename({
+                basename: font.hash
+            }))
+            .pipe(Fontmin.ttf2eot(opts)())
+            .pipe(Fontmin.ttf2woff(opts)())
+            .pipe(Fontmin.ttf2svg(opts)())
+            .pipe(Fontmin.css(opts)())
+            .pipe(storage.dest(opts.dest));
+
+        stream.on('error', callback);
+        stream.pipe(concat(callback.bind(null, null)));
+
+    }
+
+
+    /**
+     * sendFile
+     *
+     * @param  {Array}   files files
+     * @param  {Object}   font font
+     * @param  {res}   res   res
+     * @param  {Function} next  next
+     */
+    function sendFile(files, font, res, next) {
+
+        // empty src
+        if (files.length === 0) {
+            res.statusCode = 404;
+            next();
+            return;
+        }
+
+        // output dest
+        var sended = files.some(function (file) {
+
+            if (path.extname(file.path) === font.ext) {
+
+                var stream = storage
+                    .createReadStream(file.path);
+
+                stream && stream.pipe(res);
+
+                return true;
+            }
+
+        });
+
+        // empty dest
+        if (!sended) {
+            res.statusCode = 404;
+            next();
+        }
+
+    }
+
+    /**
      * serveFontmin
      *
      * @param  {req}   req request
@@ -116,11 +131,19 @@ function serveFontmin(root, options) {
     return function (req, res, next) {
 
         /**
-         * font
+         * font info
          *
          * @type {Object}
          */
         var font = fontUrl.parse(req);
+
+        // igonre dest hash
+        var sourceHash = font.pathname.indexOf(opts.dest) > -1
+            ? font.basename
+            : font.hash;
+
+        // destPath
+        var destPath = path.join(opts.dest, sourceHash + font.ext);
 
         // not support
         if (!font.support) {
@@ -136,40 +159,35 @@ function serveFontmin(root, options) {
             return;
         }
 
-        // destPath
-        var destPath = path.join(opts.dest, font.hash + font.ext);
-
-        // stream
-        var stream;
-
+        // cache
         if (storage.has(destPath)) {
 
-            stream = storage
+            var stream = storage
                 .createReadStream(destPath);
 
             stream && stream.pipe(res);
 
         }
+        // run minify
         else {
 
-            stream = storage.src(font.srcPath)
-                .pipe(Fontmin.glyph({
-                    text: font.text
-                })())
-                .pipe(streamRename({
-                    basename: font.hash
-                }))
-                .pipe(Fontmin.ttf2eot(opts)())
-                .pipe(Fontmin.ttf2woff(opts)())
-                .pipe(Fontmin.ttf2svg(opts)())
-                .pipe(Fontmin.css(opts)())
-                .pipe(storage.dest(opts.dest));
+            fontmin(
+                font,
+                opts,
+                function (err, files) {
 
+                    // fontmin err
+                    if (err) {
+                        res.statusCode = 502;
+                        next(err);
+                        return;
+                    }
 
-            var callback = fmCallback.bind(null, storage, res, next);
+                    // send file
+                    sendFile(files, font, res, next);
 
-            stream.on('error', callback);
-            stream.pipe(concat(callback.bind(null, null)));
+                }
+            );
 
         }
 
