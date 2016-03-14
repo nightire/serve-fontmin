@@ -1,4 +1,11 @@
+<p align="center">
+    <a href="http://ecomfe.github.io/fontmin/">
+        <img height="128" width="128" src="https://raw.githubusercontent.com/ecomfe/fontmin/master/fontmin.png">
+    </a>
+</p>
+
 # serve-fontmin 
+[![Build Status][travis-image]][travis-url]
 [![NPM version][npm-image]][npm-url]
 [![Downloads][downloads-image]][npm-url]
 [![Dependencies][dep-image]][dep-url]
@@ -62,6 +69,9 @@ open <http://127.0.0.1:8090/index.html>
 ## License
 
 MIT © fontmin
+
+[travis-url]: https://travis-ci.org/junmer/serve-fontmin
+[travis-image]: http://img.shields.io/travis/junmer/serve-fontmin.svg
 
 [downloads-image]: http://img.shields.io/npm/dm/serve-fontmin.svg
 [npm-url]: https://npmjs.org/package/serve-fontmin
