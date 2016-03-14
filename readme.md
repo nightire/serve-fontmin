@@ -1,5 +1,5 @@
 <p align="center">
-    <a href="http://ecomfe.github.io/fontmin/">
+    <a href="https://github.com/junmer/serve-fontmin">
         <img height="128" width="128" src="https://raw.githubusercontent.com/ecomfe/fontmin/master/fontmin.png">
     </a>
 </p>
@@ -14,7 +14,7 @@
 
 ## Usage
 
-`server`:
+### server
 
 ```javascript
 var express = require('express');
@@ -32,9 +32,19 @@ var server = app.listen(8090, function () {
 
 ```
 
-`browser`:
+### browser
 
-`${origin}/static/${filename}.css?text=${text}`
+basic
+
+```
+${pathname}/${filename}.css?text=${text}
+```
+
+optional font-family
+
+```
+${pathname}/${filename}.css?text=${text}&name=${fontFamily}
+```
 
 ## API
 
@@ -47,7 +57,7 @@ source font path.
 Options:
 
 * `oppressor`: {boolean=} compression response, defaults true.
-* `base64`: {boolean=} inject base64 data:application/x-font-ttf; (gzip font with css). default = false
+* `base64`: {boolean=} inject base64 data:application/x-font-ttf; (gzip font with css). defaults false
 * `storage`: storage plugin, if you want to use a Storage Service like `AWS`, `BOS` instead `fs`. Optional.
 
 ## Example
