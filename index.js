@@ -9,10 +9,25 @@ var resolve = require('path').resolve;
 var streamRename = require('stream-rename');
 var concat = require('concat-stream');
 var Fontmin = require('fontmin');
+var extend = require('xtend');
+var Transform = require('stream').Transform;
+var oppressor = require('oppressor');
 
 // lib
 var fontUrl = require('./lib/font-url');
 var Storage = require('./lib/storage');
+
+// noop
+function noop() {
+
+    var transform = new Transform();
+
+    transform._transform = function (chunk, encoding, done) {
+        done(null, chunk);
+    };
+
+    return transform;
+}
 
 /**
  * Module exports.
@@ -41,7 +56,7 @@ function serveFontmin(root, options) {
     }
 
     // copy options object
-    var opts = Object.create(options || null);
+    var opts = extend({}, options);
 
     opts.root = resolve(root);
 
@@ -62,6 +77,11 @@ function serveFontmin(root, options) {
      */
     function fontmin(font, opts, callback) {
 
+        var fmOpts = extend({}, opts);
+
+        // font family
+        fmOpts.fontFamily = font.name || font.basename;
+
         var stream = storage.src(font.srcPath)
             .pipe(Fontmin.glyph({
                 text: font.text
@@ -69,10 +89,10 @@ function serveFontmin(root, options) {
             .pipe(streamRename({
                 basename: font.hash
             }))
-            .pipe(Fontmin.ttf2eot(opts)())
-            .pipe(Fontmin.ttf2woff(opts)())
-            .pipe(Fontmin.ttf2svg(opts)())
-            .pipe(Fontmin.css(opts)())
+            .pipe(Fontmin.ttf2eot(fmOpts)())
+            .pipe(Fontmin.ttf2woff(fmOpts)())
+            .pipe(Fontmin.ttf2svg(fmOpts)())
+            .pipe(Fontmin.css(fmOpts)())
             .pipe(storage.dest(opts.dest));
 
         stream.on('error', callback);
@@ -81,45 +101,6 @@ function serveFontmin(root, options) {
     }
 
 
-    /**
-     * sendFile
-     *
-     * @param  {Array}   files files
-     * @param  {Object}   font font
-     * @param  {res}   res   res
-     * @param  {Function} next  next
-     */
-    function sendFile(files, font, res, next) {
-
-        // empty src
-        if (files.length === 0) {
-            res.statusCode = 404;
-            next();
-            return;
-        }
-
-        // output dest
-        var sended = files.some(function (file) {
-
-            if (path.extname(file.path) === font.ext) {
-
-                var stream = storage
-                    .createReadStream(file.path);
-
-                stream && stream.pipe(res);
-
-                return true;
-            }
-
-        });
-
-        // empty dest
-        if (!sended) {
-            res.statusCode = 404;
-            next();
-        }
-
-    }
 
     /**
      * serveFontmin
@@ -129,6 +110,59 @@ function serveFontmin(root, options) {
      * @param  {Function} next next
      */
     return function (req, res, next) {
+
+        /**
+         * send
+         *
+         * @param  {string} target path
+         */
+        function send(target) {
+
+            var stream = storage
+                .createReadStream(target);
+
+            // empty stream
+            if (!stream) {
+                res.statusCode = 404;
+                next();
+                return;
+            }
+
+            stream.pipe(opts.oppressor ? oppressor(req) : noop()).pipe(res);
+        }
+
+        /**
+         * sendDest
+         *
+         * @param  {Array}   files files
+         * @param  {Object}   font font
+         */
+        function sendDest(files, font) {
+
+            // empty src
+            if (files.length === 0) {
+                res.statusCode = 404;
+                next();
+                return;
+            }
+
+            // output dest
+            var sended = files.some(function (file) {
+
+                if (path.extname(file.path) === font.ext) {
+                    send(file.path);
+                    return true;
+                }
+
+            });
+
+            // empty dest
+            if (!sended) {
+                res.statusCode = 404;
+                next();
+            }
+
+        }
 
         /**
          * font info
@@ -162,10 +196,7 @@ function serveFontmin(root, options) {
         // cache
         if (storage.has(destPath)) {
 
-            var stream = storage
-                .createReadStream(destPath);
-
-            stream && stream.pipe(res);
+            send(destPath);
 
         }
         // run minify
@@ -184,7 +215,7 @@ function serveFontmin(root, options) {
                     }
 
                     // send file
-                    sendFile(files, font, res, next);
+                    sendDest(files, font);
 
                 }
             );

@@ -7,12 +7,14 @@
 
 ## Usage
 
+`server`:
+
 ```javascript
 var express = require('express');
-var serveFontmin = require('serve-fontmin');
+var fontmin = require('serve-fontmin');
 var app = express();
 
-app.use('/static', serveFontmin('public/font'));
+app.use('/static', fontmin('public/font'));
 
 var server = app.listen(8090, function () {
   var host = server.address().address;
@@ -23,9 +25,23 @@ var server = app.listen(8090, function () {
 
 ```
 
-## API
+`browser`:
 
 `${origin}/static/${filename}.css?text=${text}`
+
+## API
+
+### fontmin(path, [options])
+
+Path:
+
+source font path.
+
+Options:
+
+* `oppressor`: {boolean=} compression response, defaults true.
+* `base64`: {boolean=} inject base64 data:application/x-font-ttf; (gzip font with css). default = false
+* `storage`: storage plugin, if you want to use a Storage Service like `AWS`, `BOS` instead `fs`. Optional.
 
 ## Example
 

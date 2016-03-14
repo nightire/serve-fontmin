@@ -5,7 +5,7 @@
     <title> serve-fontmin-demo </title>
     <style>
         pre {
-            font-family: "SentyTEA 新蒂下午茶体";
+            font-family: "SentyTEA-Platinum-Subset";
         }
     </style>
 </head>
@@ -44,7 +44,8 @@
     var fontminAPI = 'http://127.0.0.1:8090/static/';
     var fontName = 'SentyTEA-Platinum';
     var cssExt = '.css';
-    var cssUrl = fontminAPI + fontName + cssExt + '?text=' + text;
+    var customName = 'SentyTEA-Platinum-Subset';
+    var cssUrl = fontminAPI + fontName + cssExt + '?text=' + text + '&name=' + customName;
 
     loadCss(cssUrl);
 
