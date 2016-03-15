@@ -14,7 +14,7 @@ var request = require('supertest');
 var serveFontmin = require('..');
 var Transform = require('stream').Transform;
 
-var Storage = require('../lib/Storage');
+var Storage = require('../lib/storage');
 var fixtures = __dirname + '/fixtures';
 var sourcePath = '/SentyBrush';
 var textQuery = '?text=abc';
