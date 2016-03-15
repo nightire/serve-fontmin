@@ -1,2 +1,4 @@
 node_modules/
 dest
+coverage/
+npm-debug.log

@@ -12,6 +12,8 @@ var path = require('path');
 var del = require('del');
 var request = require('supertest');
 var serveFontmin = require('..');
+var Transform = require('stream').Transform;
+
 
 var fixtures = __dirname + '/fixtures';
 var sourcePath = '/SentyBrush';
@@ -21,15 +23,20 @@ var dest = path.resolve(fixtures, 'dest');
 
 describe('serveFontmin()', function () {
 
-    beforeEach(function () {
-        del.sync(dest);
-    });
-
     describe('basic operations', function () {
         var server;
 
         before(function () {
+            del.sync(dest);
             server = createServer();
+        });
+
+        it('should require root path', function () {
+            assert.throws(serveFontmin.bind(), /root path required/);
+        });
+
+        it('should require root path to be string', function () {
+            assert.throws(serveFontmin.bind(null, 123), /root path.*string/);
         });
 
         it('should serve css files', function (done) {
@@ -94,28 +101,159 @@ describe('serveFontmin()', function () {
                 .expect(200, done);
         });
 
-    });
+        it('should serve 404 when not found', function (done) {
 
-    describe('optional font-family', function () {
-        var server;
-
-        before(function () {
-            server = createServer();
+            request(server)
+                .get('/404')
+                .expect(404, done);
         });
 
-        it('should have target font-family in css ', function (done) {
+        it('should serve 404 when ext not support', function (done) {
+
             request(server)
-                .get(basicUrl + '&name=target-font-family')
-                .expect(/target-font-family/)
+                .get(sourcePath + '.woff2' + textQuery)
+                .expect(404, done);
+        });
+
+        it('should serve 404 when src not found', function (done) {
+
+            request(server)
+                .get('/null.css')
+                .expect(404, done);
+        });
+
+
+    });
+
+    describe('fontmin', function () {
+        var server;
+
+        var fakeStorage;
+
+        before(function () {
+            del.sync(dest);
+            var Storage = require('../lib/Storage');
+            fakeStorage = new Storage(fixtures);
+
+            // dest cb err
+            fakeStorage.dest = function () {
+                var transform = new Transform();
+                transform._transform = function (file, encoding, cb) {
+                    cb(new Error('fontmin err'), file);
+                };
+                return transform;
+            };
+
+            server = createServer(fixtures, {storage: fakeStorage});
+
+        });
+
+        it('should serve 500 when fontmin err', function (done) {
+
+            request(server)
+                .get(basicUrl)
+                .expect(500, done);
+
+        });
+
+    });
+
+    describe('optional Storage', function () {
+        var server;
+
+        var fakeStorage;
+
+        before(function () {
+            del.sync(dest);
+            var Storage = require('../lib/Storage');
+            fakeStorage = new Storage(fixtures);
+            fakeStorage._src = fakeStorage.src;
+            server = createServer(fixtures, {storage: fakeStorage});
+
+        });
+
+        it('should serve with fakeStorage', function (done) {
+            request(server)
+                .get(basicUrl)
                 .expect(200, done);
         });
 
+
+        it('should require path when createReadStream', function (done) {
+
+            assert.throws(function () {
+                fakeStorage.createReadStream(null);
+            });
+
+            done();
+
+        });
+
+        // it('should require path when createWriteStream ', function (done) {
+
+        //     assert.throws(function () {
+        //         fakeStorage.createWriteStream(null);
+        //     });
+
+        //     done();
+
+        // });
+
+        // it('should create ReadStream and WriteStream ', function (done) {
+
+        //     var writeStream = fakeStorage.createWriteStream('dest/SentyBrush.ttf');
+
+        //     fakeStorage.createReadStream('SentyBrush.ttf')
+        //         .pipe(writeStream);
+
+        //     writeStream.on('finish', done);
+
+        // });
+
+        it('should fallback 404 when fakeStorage dest empty', function (done) {
+
+            // return false when dest
+            fakeStorage.has = function (key) {
+                return !/dest/.test(key);
+            };
+
+            request(server)
+                .get(basicUrl)
+                .expect(404, done);
+        });
+
+        it('should fallback 404 when fakeStorage dest ext isn\'t font', function (done) {
+
+            // return empty src
+            fakeStorage.src = function () {
+                return fakeStorage._src('../*.js');
+            };
+
+            request(server)
+                .get(basicUrl)
+                .expect(404, done);
+        });
+
+        it('should fallback 404 when fakeStorage src empty', function (done) {
+
+            // return empty src
+            fakeStorage.src = function () {
+                return fakeStorage._src('*.css');
+            };
+
+            request(server)
+                .get(basicUrl)
+                .expect(404, done);
+        });
+
     });
+
 
     describe('response optimization', function () {
         var server;
 
         before(function () {
+            del.sync(dest);
             server = createServer(fixtures, {oppressor: true});
         });
 
@@ -135,6 +273,7 @@ describe('serveFontmin()', function () {
         var server;
 
         before(function () {
+            del.sync(dest);
             server = createServer(fixtures, {base64: true});
         });
 
@@ -145,6 +284,23 @@ describe('serveFontmin()', function () {
                 .expect(200, done);
         });
 
+
+    });
+
+    describe('optional font-family', function () {
+        var server;
+
+        before(function () {
+            del.sync(dest);
+            server = createServer();
+        });
+
+        it('should have target font-family in css ', function (done) {
+            request(server)
+                .get(basicUrl + '&name=target-font-family')
+                .expect(/target-font-family/)
+                .expect(200, done);
+        });
 
     });
 

@@ -118,17 +118,16 @@ function serveFontmin(root, options) {
          */
         function send(target) {
 
-            var stream = storage
-                .createReadStream(target);
-
-            // empty stream
-            if (!stream) {
+            if (!storage.has(target)) {
                 res.statusCode = 404;
                 next();
                 return;
             }
 
-            stream.pipe(opts.oppressor ? oppressor(req) : noop()).pipe(res);
+            storage
+                .createReadStream(target)
+                .pipe(opts.oppressor ? oppressor(req) : noop())
+                .pipe(res);
         }
 
         /**
@@ -209,7 +208,7 @@ function serveFontmin(root, options) {
 
                     // fontmin err
                     if (err) {
-                        res.statusCode = 502;
+                        res.statusCode = 500;
                         next(err);
                         return;
                     }

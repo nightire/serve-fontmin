@@ -3,3 +3,6 @@ node_js:
   - '0.10'
   - '0.12'
   - 'iojs'
+  - '5.3'
+after_script:
+  - npm run coveralls
