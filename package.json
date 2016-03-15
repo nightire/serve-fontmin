@@ -14,7 +14,9 @@
   ],
   "main": "index.js",
   "scripts": {
-    "test": "mocha --reporter spec --bail --check-leaks test/"
+    "coverage": "istanbul cover node_modules/mocha/bin/_mocha -- --reporter spec --check-leaks test/",
+    "test": "npm run coverage",
+    "coveralls": "cat ./coverage/lcov.info | coveralls"
   },
   "author": "junmer",
   "license": "MIT",
@@ -29,7 +31,9 @@
     "xtend": "^4.0.1"
   },
   "devDependencies": {
+    "coveralls": "^2.11.8",
     "del": "^2.2.0",
+    "istanbul": "0.4.2",
     "mocha": "2.3.4",
     "supertest": "1.1.0"
   }
