@@ -14,7 +14,7 @@ var request = require('supertest');
 var serveFontmin = require('..');
 var Transform = require('stream').Transform;
 
-
+var Storage = require('../lib/Storage');
 var fixtures = __dirname + '/fixtures';
 var sourcePath = '/SentyBrush';
 var textQuery = '?text=abc';
@@ -132,7 +132,6 @@ describe('serveFontmin()', function () {
 
         before(function () {
             del.sync(dest);
-            var Storage = require('../lib/Storage');
             fakeStorage = new Storage(fixtures);
 
             // dest cb err
@@ -165,7 +164,6 @@ describe('serveFontmin()', function () {
 
         before(function () {
             del.sync(dest);
-            var Storage = require('../lib/Storage');
             fakeStorage = new Storage(fixtures);
             fakeStorage._src = fakeStorage.src;
             server = createServer(fixtures, {storage: fakeStorage});
