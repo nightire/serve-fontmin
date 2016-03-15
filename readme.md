@@ -9,6 +9,7 @@
 [![NPM version][npm-image]][npm-url]
 [![Downloads][downloads-image]][npm-url]
 [![Dependencies][dep-image]][dep-url]
+[![Coverage Status][cov-image]][cov-url]
 
 > fontmin serving middleware 
 
@@ -89,5 +90,8 @@ MIT © fontmin
 
 [dep-url]: https://david-dm.org/junmer/serve-fontmin
 [dep-image]: http://img.shields.io/david/junmer/serve-fontmin.svg
+
+[cov-image]: https://coveralls.io/repos/github/junmer/serve-fontmin/badge.svg?branch=master
+[cov-url]: https://coveralls.io/github/junmer/serve-fontmin?branch=master
 
 [font-url]: http://font.sentywed.com/
