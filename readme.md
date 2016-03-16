@@ -57,9 +57,10 @@ source font path.
 
 Options:
 
-* `oppressor`: {boolean=} compression response, defaults true.
-* `base64`: {boolean=} inject base64 data:application/x-font-ttf; (gzip font with css). defaults false
-* `storage`: storage plugin, if you want to use a Storage Service like `AWS`, `BOS` instead `fs`. Optional.
+- `headers`     headers of response to serve, optional.
+- `oppressor`   compression response, defaults false.
+- `base64`      inject base64 data:application/x-font-ttf; (gzip font with css). defaults false
+- `storage`     storage plugin, if you want to use a Storage Service like `AWS`, `BOS` instead `fs`, optional.
 
 ## Example
 

@@ -58,15 +58,13 @@ function serveFontmin(root, options) {
     // options
     var opts = extend({
         dest: 'dest',
-        setHeaders: {
+        headers: {
             'Access-Control-Allow-Origin': '*'
         }
     }, options);
 
+    // resolve root
     opts.root = resolve(root);
-
-    // for css
-    opts.fontPath = ['.', opts.dest, ''].join('/');
 
     // storage
     var storage = opts.storage || new Storage(opts.root);
@@ -82,7 +80,10 @@ function serveFontmin(root, options) {
 
         var fmOpts = extend({}, opts);
 
-        // font family
+        // for css font path
+        fmOpts.fontPath = ['.', opts.dest, ''].join('/');
+
+        // font css font family
         fmOpts.fontFamily = font.name || font.basename;
 
         var stream = storage.src(font.srcPath)
@@ -128,9 +129,9 @@ function serveFontmin(root, options) {
             }
 
             // set headers
-            Object.keys(opts.setHeaders)
+            Object.keys(opts.headers)
                 .forEach(function (header) {
-                    res.setHeader(header, opts.setHeaders[header]);
+                    res.setHeader(header, opts.headers[header]);
                 });
 
             storage
