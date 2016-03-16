@@ -55,12 +55,15 @@ function serveFontmin(root, options) {
         throw new TypeError('root path must be a string');
     }
 
-    // copy options object
-    var opts = extend({}, options);
+    // options
+    var opts = extend({
+        dest: 'dest',
+        setHeaders: {
+            'Access-Control-Allow-Origin': '*'
+        }
+    }, options);
 
     opts.root = resolve(root);
-
-    opts.dest = opts.dest || 'dest';
 
     // for css
     opts.fontPath = ['.', opts.dest, ''].join('/');
@@ -123,6 +126,12 @@ function serveFontmin(root, options) {
                 next();
                 return;
             }
+
+            // set headers
+            Object.keys(opts.setHeaders)
+                .forEach(function (header) {
+                    res.setHeader(header, opts.setHeaders[header]);
+                });
 
             storage
                 .createReadStream(target)

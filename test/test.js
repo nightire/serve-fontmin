@@ -122,6 +122,12 @@ describe('serveFontmin()', function () {
                 .expect(404, done);
         });
 
+        it('should setHeader `Access-Control-Allow-Origin: *`', function (done) {
+
+            request(server)
+                .get(sourcePath + '.ttf' + textQuery)
+                .expect('Access-Control-Allow-Origin', '*', done);
+        });
 
     });
 
